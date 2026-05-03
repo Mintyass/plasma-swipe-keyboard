@@ -40,21 +40,36 @@ KeyboardLayout {
 
                 Rectangle {
                     anchors.fill: parent
-                    color: "#1a1a1a"
-                    radius: 4
+                    color: "#151515"
+                    radius: 6
 
                     Repeater {
                         model: swipeArea.rows
                         delegate: Repeater {
                             required property var modelData
                             model: modelData.letters.length
-                            delegate: Text {
+                            delegate: Rectangle {
+                                id: keyTile
                                 required property int index
-                                text: modelData.letters[index].toUpperCase()
-                                color: "#888"
-                                font.pixelSize: Math.min(swipeArea.height * 0.18, swipeArea.width * 0.06)
-                                x: swipeArea.width  * (modelData.xStart + index * 0.10) - width / 2
+                                readonly property string letter: modelData.letters[keyTile.index].toUpperCase()
+
+                                width:  swipeArea.width  * 0.09
+                                height: swipeArea.height * 0.28
+                                x: swipeArea.width  * (modelData.xStart + keyTile.index * 0.10) - width / 2
                                 y: swipeArea.height * modelData.y - height / 2
+
+                                color: "#2c2c2c"
+                                radius: 6
+                                border.color: "#404040"
+                                border.width: 1
+
+                                Text {
+                                    anchors.centerIn: parent
+                                    text: keyTile.letter
+                                    color: "#cfcfcf"
+                                    font.pixelSize: Math.min(parent.height * 0.5, parent.width * 0.55)
+                                    font.weight: Font.Medium
+                                }
                             }
                         }
                     }
