@@ -31,9 +31,15 @@ bool SwipeInputMethod::setInputMode(const QString &, QVirtualKeyboardInputEngine
     return true;
 }
 
-bool SwipeInputMethod::setTextCase(QVirtualKeyboardInputEngine::TextCase)
+bool SwipeInputMethod::setTextCase(QVirtualKeyboardInputEngine::TextCase textCase)
 {
+    m_textCase = textCase;
     return true;
+}
+
+QString SwipeInputMethod::applyTextCase(const QString &s) const
+{
+    return (m_textCase == QVirtualKeyboardInputEngine::TextCase::Upper) ? s.toUpper() : s;
 }
 
 bool SwipeInputMethod::keyEvent(Qt::Key key, const QString &text, Qt::KeyboardModifiers modifiers)
@@ -163,15 +169,19 @@ bool SwipeInputMethod::traceEnd(QVirtualKeyboardTrace *trace)
             // Commit any existing preedit (from a prior swipe), then insert the letter.
             if (!ic->preeditText().isEmpty())
                 ic->commit();
-            ic->commit(QString(letter));
+            ic->commit(applyTextCase(QString(letter)));
             m_candidates.clear();
             m_activeIndex = -1;
             emit selectionListChanged(QVirtualKeyboardSelectionListModel::Type::WordCandidateList);
             emit selectionListActiveItemChanged(QVirtualKeyboardSelectionListModel::Type::WordCandidateList, m_activeIndex);
         }
     } else if (m_lastTraceArea.isValid()) {
-        // Swipe: run the matcher and offer candidates.
-        m_candidates = m_matcher.match(points, m_lastTraceArea, 5);
+        // Swipe: run the matcher and offer candidates (cased to match shift state).
+        QStringList raw = m_matcher.match(points, m_lastTraceArea, 5);
+        m_candidates.clear();
+        m_candidates.reserve(raw.size());
+        for (const QString &w : raw)
+            m_candidates.append(applyTextCase(w));
         m_activeIndex = m_candidates.isEmpty() ? -1 : 0;
 
         FILE *f = fopen("/tmp/swipe.log", "a");

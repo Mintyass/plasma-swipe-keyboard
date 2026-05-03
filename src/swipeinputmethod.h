@@ -38,11 +38,14 @@ public:
     bool traceEnd(QVirtualKeyboardTrace *trace) override;
 
 private:
+    QString applyTextCase(const QString &s) const;
+
     QList<QVirtualKeyboardTrace *> m_traces;
     QStringList m_candidates;
     int m_activeIndex = -1;
     WordMatcher m_matcher;
     QSizeF m_lastTraceArea;
+    QVirtualKeyboardInputEngine::TextCase m_textCase = QVirtualKeyboardInputEngine::TextCase::Lower;
 };
 
 QT_END_NAMESPACE
