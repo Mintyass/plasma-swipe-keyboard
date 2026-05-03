@@ -30,6 +30,10 @@ KeyboardLayout {
                 property var activeTrace: null
                 property int traceId: 0
                 property var inkPoints: []
+                // Press position (in MouseArea-local pixels). -1 means not pressed.
+                // Tiles read this to highlight themselves under the finger.
+                property real pressX: -1
+                property real pressY: -1
 
                 // Key positions match wordmatcher.cpp's keyCenter() table (normalized [0,1]).
                 readonly property var rows: [
@@ -52,16 +56,23 @@ KeyboardLayout {
                                 id: keyTile
                                 required property int index
                                 readonly property string letter: modelData.letters[keyTile.index].toUpperCase()
+                                readonly property bool pressed:
+                                    swipeArea.pressX >= keyTile.x
+                                    && swipeArea.pressX < keyTile.x + keyTile.width
+                                    && swipeArea.pressY >= keyTile.y
+                                    && swipeArea.pressY < keyTile.y + keyTile.height
 
                                 width:  swipeArea.width  * 0.09
                                 height: swipeArea.height * 0.28
                                 x: swipeArea.width  * (modelData.xStart + keyTile.index * 0.10) - width / 2
                                 y: swipeArea.height * modelData.y - height / 2
 
-                                color: "#2c2c2c"
+                                color: pressed ? "#4a4a4a" : "#2c2c2c"
                                 radius: 6
-                                border.color: "#404040"
+                                border.color: pressed ? "#7dd3fc" : "#404040"
                                 border.width: 1
+                                Behavior on color { ColorAnimation { duration: 60 } }
+                                Behavior on border.color { ColorAnimation { duration: 60 } }
 
                                 Text {
                                     anchors.centerIn: parent
@@ -91,6 +102,8 @@ KeyboardLayout {
 
                 onPressed: (mouse) => {
                     traceId++
+                    pressX = mouse.x
+                    pressY = mouse.y
                     inkPoints = [Qt.point(mouse.x, mouse.y)]
                     var captureInfo = { channels: ['t'], sampleRate: 60, uniform: false, latency: 0.0, dpi: 96 }
                     var screenInfo = { boundingBox: Qt.rect(x, y, width, height), canvasType: "keyboard" }
@@ -102,12 +115,16 @@ KeyboardLayout {
                 }
                 onPositionChanged: (mouse) => {
                     if (activeTrace) {
+                        pressX = mouse.x
+                        pressY = mouse.y
                         inkPoints = [...inkPoints, Qt.point(mouse.x, mouse.y)]
                         var idx = activeTrace.addPoint(Qt.point(mouse.x, mouse.y))
                         activeTrace.setChannelData('t', idx, Date.now())
                     }
                 }
                 onReleased: {
+                    pressX = -1
+                    pressY = -1
                     if (activeTrace) {
                         activeTrace.final = true
                         InputContext.inputEngine.traceEnd(activeTrace)
