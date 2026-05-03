@@ -30,10 +30,15 @@ KeyboardLayout {
                 property var activeTrace: null
                 property int traceId: 0
                 property var inkPoints: []
-                // Press position (in MouseArea-local pixels). -1 means not pressed.
-                // Tiles read this to highlight themselves under the finger.
+                // Press position (in MouseArea-local pixels). -1 means no highlight.
+                // We only highlight the start tile (the key under the initial press)
+                // and clear the highlight as soon as the finger has moved far enough
+                // to be a swipe — otherwise every key the finger crosses would light up.
                 property real pressX: -1
                 property real pressY: -1
+                property real pressStartX: -1
+                property real pressStartY: -1
+                readonly property real swipeThresholdSq: 20 * 20  // px²
 
                 // Key positions match wordmatcher.cpp's keyCenter() table (normalized [0,1]).
                 readonly property var rows: [
@@ -102,6 +107,8 @@ KeyboardLayout {
 
                 onPressed: (mouse) => {
                     traceId++
+                    pressStartX = mouse.x
+                    pressStartY = mouse.y
                     pressX = mouse.x
                     pressY = mouse.y
                     inkPoints = [Qt.point(mouse.x, mouse.y)]
@@ -115,14 +122,24 @@ KeyboardLayout {
                 }
                 onPositionChanged: (mouse) => {
                     if (activeTrace) {
-                        pressX = mouse.x
-                        pressY = mouse.y
+                        // Once finger has moved enough to be a swipe, drop the tile
+                        // highlight so we don't light up every key the trail crosses.
+                        if (pressX >= 0) {
+                            var dx = mouse.x - pressStartX
+                            var dy = mouse.y - pressStartY
+                            if (dx * dx + dy * dy > swipeThresholdSq) {
+                                pressX = -1
+                                pressY = -1
+                            }
+                        }
                         inkPoints = [...inkPoints, Qt.point(mouse.x, mouse.y)]
                         var idx = activeTrace.addPoint(Qt.point(mouse.x, mouse.y))
                         activeTrace.setChannelData('t', idx, Date.now())
                     }
                 }
                 onReleased: {
+                    pressStartX = -1
+                    pressStartY = -1
                     pressX = -1
                     pressY = -1
                     if (activeTrace) {
