@@ -113,7 +113,7 @@ QVariant SwipeInputMethod::selectionListData(QVirtualKeyboardSelectionListModel:
 void SwipeInputMethod::selectionListItemSelected(QVirtualKeyboardSelectionListModel::Type, int index)
 {
     auto *ic = inputContext();
-    if (ic && !m_candidates.isEmpty())
+    if (ic && index >= 0 && index < m_candidates.size())
         ic->commit(m_candidates.at(index));
     m_candidates.clear();
     m_activeIndex = -1;
