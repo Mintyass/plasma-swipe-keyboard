@@ -15,3 +15,6 @@
 # Logs and ephemeral test output
 *.log
 /tmp_log/
+
+# Per-session handoff notes (not committed)
+SESSION_HANDOFF.md
