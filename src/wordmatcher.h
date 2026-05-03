@@ -18,6 +18,7 @@ public:
         qreal gamma   = 0.0;   // length deviation
         qreal delta   = 0.02;  // log-frequency bias (lowers score for common words)
         qreal epsilon = 1.5;   // endpoint anchoring (mean of start + end distance) — biggest win
+        qreal zeta    = 0.0;   // bigram bias (lowers score for words with common letter pairs)
     };
 
     WordMatcher();
@@ -44,6 +45,7 @@ private:
         QList<QPointF> shape;      // resampled, then centered on origin and scaled to unit bbox
         qreal length = 0;          // path length in [0,1] space
         int dedupSize = 0;         // number of distinct key positions (after consecutive dedup)
+        qreal bigramScore = 0;     // mean log-frequency of bigrams in this word (higher = more natural)
     };
 
     QList<Template> m_templates;

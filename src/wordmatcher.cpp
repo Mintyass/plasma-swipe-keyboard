@@ -223,6 +223,28 @@ WordMatcher::WordMatcher()
 
     qCInfo(lcMatcher) << "WordMatcher: loaded" << kept << "of" << parsed
                       << "(skipped" << skipped << ") in" << timer.elapsed() << "ms";
+
+    // Compute bigram frequencies from the loaded dictionary, then attach a
+    // mean-log-frequency score to each template. Used optionally via Weights::zeta
+    // to penalize words with rare letter pairs (e.g., "yt", "qx").
+    QHash<quint16, qreal> bigramFreq;
+    bigramFreq.reserve(26 * 26);
+    for (const Template &t : m_templates) {
+        for (int i = 0; i + 1 < t.word.size(); ++i) {
+            const quint16 key = (quint16(t.word[i].unicode()) << 8) | quint16(t.word[i + 1].unicode());
+            bigramFreq[key] += t.frequency;
+        }
+    }
+    for (Template &t : m_templates) {
+        qreal sumLog = 0;
+        int n = 0;
+        for (int i = 0; i + 1 < t.word.size(); ++i) {
+            const quint16 key = (quint16(t.word[i].unicode()) << 8) | quint16(t.word[i + 1].unicode());
+            sumLog += std::log(bigramFreq.value(key, 0) + 1.0);
+            ++n;
+        }
+        t.bigramScore = (n > 0) ? sumLog / n : 0;
+    }
 }
 
 WordMatcher::Template WordMatcher::buildTemplate(const QString &word, qreal frequency)
@@ -299,7 +321,8 @@ QStringList WordMatcher::match(const QList<QPointF> &userPoints,
                              + m_weights.beta    * shape
                              + m_weights.gamma   * length
                              + m_weights.epsilon * endpoint
-                             - m_weights.delta   * freqBias;
+                             - m_weights.delta   * freqBias
+                             - m_weights.zeta    * t.bigramScore;
         scored.append({s, t.word});
     }
 

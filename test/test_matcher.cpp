@@ -137,8 +137,8 @@ int main(int argc, char **argv)
     qint64 loadMs = loadTimer.elapsed();
     printf("=== loaded matcher in %lld ms ===\n\n", loadMs);
 
-    printf("=== weights: alpha=0.5 beta=0.5 gamma=0 delta=0.02 epsilon=1.5 ===\n");
-    Stats s0 = evaluate(m, 0.0, 1, kbW, kbH, true);
+    printf("=== weights: alpha=0.5 beta=0.5 gamma=0 delta=0.02 epsilon=1.5 zeta=0 ===\n");
+    Stats s0 = evaluate(m, 0.0, 1, kbW, kbH);
     printStats("ideal     ", s0);
     for (qreal n : {2.0, 4.0, 8.0, 12.0}) {
         char label[32];
