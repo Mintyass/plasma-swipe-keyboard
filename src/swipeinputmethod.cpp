@@ -8,8 +8,16 @@ Q_LOGGING_CATEGORY(lcSwipe, "plasma.swipe")
 
 QT_BEGIN_NAMESPACE
 
+// File logging is opt-in via PLASMA_SWIPE_LOG=1 — noisy by default would litter /tmp.
+static bool fileLogEnabled()
+{
+    static const bool enabled = qEnvironmentVariableIsSet("PLASMA_SWIPE_LOG");
+    return enabled;
+}
+
 static void fileLog(const char *msg)
 {
+    if (!fileLogEnabled()) return;
     FILE *f = fopen("/tmp/swipe.log", "a");
     if (f) { fputs(msg, f); fputc('\n', f); fclose(f); }
 }
@@ -184,12 +192,14 @@ bool SwipeInputMethod::traceEnd(QVirtualKeyboardTrace *trace)
             m_candidates.append(applyTextCase(w));
         m_activeIndex = m_candidates.isEmpty() ? -1 : 0;
 
-        FILE *f = fopen("/tmp/swipe.log", "a");
-        if (f) {
-            fprintf(f, "=== match: %d points, len=%.1f ===\n", points.size(), traceLen);
-            for (int i = 0; i < m_candidates.size(); ++i)
-                fprintf(f, "  #%d: %s\n", i, m_candidates[i].toUtf8().constData());
-            fclose(f);
+        if (fileLogEnabled()) {
+            FILE *f = fopen("/tmp/swipe.log", "a");
+            if (f) {
+                fprintf(f, "=== match: %d points, len=%.1f ===\n", points.size(), traceLen);
+                for (int i = 0; i < m_candidates.size(); ++i)
+                    fprintf(f, "  #%d: %s\n", i, m_candidates[i].toUtf8().constData());
+                fclose(f);
+            }
         }
 
         if (ic && !m_candidates.isEmpty())

@@ -10,5 +10,6 @@ export QT_QPA_PLATFORM=xcb
 export QT_LOGGING_RULES="plasma.swipe.*=true;qt.virtualkeyboard.*=true"
 export QT_FORCE_STDERR_LOGGING=1
 export QT_QUICK_CONTROLS_STYLE=Basic
+export PLASMA_SWIPE_LOG=1   # write match details to /tmp/swipe.log for debugging
 
 exec qml-qt6 test/testapp.qml 2>&1
