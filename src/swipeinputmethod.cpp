@@ -47,7 +47,13 @@ bool SwipeInputMethod::setTextCase(QVirtualKeyboardInputEngine::TextCase textCas
 
 QString SwipeInputMethod::applyTextCase(const QString &s) const
 {
-    return (m_textCase == QVirtualKeyboardInputEngine::TextCase::Upper) ? s.toUpper() : s;
+    if (s.isEmpty() || m_textCase != QVirtualKeyboardInputEngine::TextCase::Upper)
+        return s;
+    // Caps lock → all caps. Single-shift / auto-capitalize → first letter only.
+    auto *ic = inputContext();
+    if (ic && ic->isCapsLockActive())
+        return s.toUpper();
+    return s.left(1).toUpper() + s.mid(1);
 }
 
 bool SwipeInputMethod::keyEvent(Qt::Key key, const QString &text, Qt::KeyboardModifiers modifiers)
