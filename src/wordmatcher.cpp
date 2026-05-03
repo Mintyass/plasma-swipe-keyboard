@@ -252,6 +252,7 @@ WordMatcher::Template WordMatcher::buildTemplate(const QString &word, qreal freq
     Template t;
     t.word = word;
     t.frequency = frequency;
+    t.logFreq = std::log(frequency + 1.0);
 
     QList<QPointF> keys;
     keys.reserve(word.size());
@@ -316,12 +317,11 @@ QStringList WordMatcher::match(const QList<QPointF> &userPoints,
         const qreal startDist = QLineF(userStart, t.resampled.first()).length();
         const qreal endDist   = QLineF(userEnd,   t.resampled.last()).length();
         const qreal endpoint  = (startDist + endDist) * 0.5;
-        const qreal freqBias = std::log(t.frequency + 1.0);
         const qreal s        = m_weights.alpha   * location
                              + m_weights.beta    * shape
                              + m_weights.gamma   * length
                              + m_weights.epsilon * endpoint
-                             - m_weights.delta   * freqBias
+                             - m_weights.delta   * t.logFreq
                              - m_weights.zeta    * t.bigramScore;
         scored.append({s, t.word});
     }

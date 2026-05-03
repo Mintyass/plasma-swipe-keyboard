@@ -41,6 +41,7 @@ private:
     struct Template {
         QString word;
         qreal frequency = 0;       // higher = more common
+        qreal logFreq = 0;         // precomputed log(frequency + 1) — used by score()
         QList<QPointF> resampled;  // N points in [0,1] keyboard-normalized space
         QList<QPointF> shape;      // resampled, then centered on origin and scaled to unit bbox
         qreal length = 0;          // path length in [0,1] space
