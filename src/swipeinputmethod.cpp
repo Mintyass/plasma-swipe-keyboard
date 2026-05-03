@@ -38,6 +38,7 @@ bool SwipeInputMethod::setTextCase(QVirtualKeyboardInputEngine::TextCase)
 
 bool SwipeInputMethod::keyEvent(Qt::Key key, const QString &text, Qt::KeyboardModifiers modifiers)
 {
+    Q_UNUSED(text)
     Q_UNUSED(modifiers)
     auto *ic = inputContext();
     if (!ic)
@@ -47,6 +48,8 @@ bool SwipeInputMethod::keyEvent(Qt::Key key, const QString &text, Qt::KeyboardMo
     case Qt::Key_Space:
     case Qt::Key_Return:
     case Qt::Key_Enter:
+        // Commit the preedit candidate (if any), then return false so the engine
+        // inserts the space/enter character itself.
         if (!m_candidates.isEmpty()) {
             ic->commit(m_candidates.first());
             m_candidates.clear();
@@ -54,7 +57,7 @@ bool SwipeInputMethod::keyEvent(Qt::Key key, const QString &text, Qt::KeyboardMo
             emit selectionListChanged(QVirtualKeyboardSelectionListModel::Type::WordCandidateList);
             emit selectionListActiveItemChanged(QVirtualKeyboardSelectionListModel::Type::WordCandidateList, m_activeIndex);
         }
-        return true;
+        return false;
     case Qt::Key_Backspace:
         // If a swipe preedit is showing, discard it instead of deleting prior text.
         if (!ic->preeditText().isEmpty()) {
@@ -65,15 +68,12 @@ bool SwipeInputMethod::keyEvent(Qt::Key key, const QString &text, Qt::KeyboardMo
             emit selectionListActiveItemChanged(QVirtualKeyboardSelectionListModel::Type::WordCandidateList, m_activeIndex);
             return true;
         }
-        ic->inputEngine()->virtualKeyClick(Qt::Key_Backspace, QString(), Qt::NoModifier);
-        return true;
+        return false; // let the engine perform the default backspace
     default:
-        if (!text.isEmpty()) {
-            ic->inputEngine()->virtualKeyClick(key, text, Qt::NoModifier);
-            return true;
-        }
+        // For all other keys (letters, punctuation), let the engine handle the
+        // insertion. Calling virtualKeyClick here would recurse back into us.
+        return false;
     }
-    return false;
 }
 
 QList<QVirtualKeyboardSelectionListModel::Type> SwipeInputMethod::selectionLists()
@@ -150,6 +150,7 @@ bool SwipeInputMethod::traceEnd(QVirtualKeyboardTrace *trace)
     auto *ic = inputContext();
 
     if (!points.isEmpty() && m_lastTraceArea.isValid()
+            && m_lastTraceArea.width() > 0 && m_lastTraceArea.height() > 0
             && (points.size() < 5 || traceLen < 30.0)) {
         // Tap: route to the nearest key. Centroid in normalized [0,1] space.
         QPointF avg(0, 0);
@@ -158,11 +159,15 @@ bool SwipeInputMethod::traceEnd(QVirtualKeyboardTrace *trace)
         const QPointF norm(avg.x() / m_lastTraceArea.width(),
                            avg.y() / m_lastTraceArea.height());
         const QChar letter = WordMatcher::nearestKey(norm);
-        if (!letter.isNull() && ic && ic->inputEngine()) {
-            ic->inputEngine()->virtualKeyClick(
-                Qt::Key(letter.toUpper().unicode()),
-                QString(letter),
-                Qt::NoModifier);
+        if (!letter.isNull() && ic) {
+            // Commit any existing preedit (from a prior swipe), then insert the letter.
+            if (!ic->preeditText().isEmpty())
+                ic->commit();
+            ic->commit(QString(letter));
+            m_candidates.clear();
+            m_activeIndex = -1;
+            emit selectionListChanged(QVirtualKeyboardSelectionListModel::Type::WordCandidateList);
+            emit selectionListActiveItemChanged(QVirtualKeyboardSelectionListModel::Type::WordCandidateList, m_activeIndex);
         }
     } else if (m_lastTraceArea.isValid()) {
         // Swipe: run the matcher and offer candidates.
