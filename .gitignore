@@ -1,0 +1,17 @@
+# Build outputs
+/build/
+/build-*/
+
+# Editor / OS detritus
+*.swp
+*.swo
+.DS_Store
+.idea/
+.vscode/
+
+# Claude Code
+.claude/
+
+# Logs and ephemeral test output
+*.log
+/tmp_log/
