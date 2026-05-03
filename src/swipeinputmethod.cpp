@@ -128,7 +128,7 @@ void SwipeInputMethod::selectionListItemSelected(QVirtualKeyboardSelectionListMo
 {
     auto *ic = inputContext();
     if (ic && index >= 0 && index < m_candidates.size())
-        ic->commit(m_candidates.at(index));
+        ic->commit(m_candidates.at(index) + QLatin1Char(' '));
     m_candidates.clear();
     m_activeIndex = -1;
     emit selectionListChanged(QVirtualKeyboardSelectionListModel::Type::WordCandidateList);
@@ -180,9 +180,10 @@ bool SwipeInputMethod::traceEnd(QVirtualKeyboardTrace *trace)
                            avg.y() / m_lastTraceArea.height());
         const QChar letter = WordMatcher::nearestKey(norm);
         if (!letter.isNull() && ic) {
-            // Commit any existing preedit (from a prior swipe), then insert the letter.
-            if (!ic->preeditText().isEmpty())
-                ic->commit();
+            // If a prior swipe candidate is still in preedit, commit it with a
+            // trailing space before inserting the tap letter ("the" + tap "q" → "the q").
+            if (!m_candidates.isEmpty())
+                ic->commit(m_candidates.first() + QLatin1Char(' '));
             ic->commit(applyTextCase(QString(letter)));
             m_candidates.clear();
             m_activeIndex = -1;
@@ -190,6 +191,12 @@ bool SwipeInputMethod::traceEnd(QVirtualKeyboardTrace *trace)
             emit selectionListActiveItemChanged(QVirtualKeyboardSelectionListModel::Type::WordCandidateList, m_activeIndex);
         }
     } else if (m_lastTraceArea.isValid()) {
+        // If a prior swipe's candidate is still showing as preedit, commit it with
+        // a trailing space before processing the new swipe — otherwise consecutive
+        // swipes run together as "thequickbrown".
+        if (ic && !m_candidates.isEmpty())
+            ic->commit(m_candidates.first() + QLatin1Char(' '));
+
         // Swipe: run the matcher and offer candidates (cased to match shift state).
         QStringList raw = m_matcher.match(points, m_lastTraceArea, 5);
         m_candidates.clear();
