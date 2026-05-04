@@ -17,7 +17,8 @@
 InputPanelWindow::InputPanelWindow(QWindow *parent)
     : QQuickWindow{parent}
 {
-    setFlag(Qt::FramelessWindowHint);
+    // Phase 5C experiment: keep frame so KWin gives normal toplevel decorations
+    // (titlebar to drag, close button, etc.). Restore with: setFlag(Qt::FramelessWindowHint);
 }
 
 QRect InputPanelWindow::interactiveRegion() const

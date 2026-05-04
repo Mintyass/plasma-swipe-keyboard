@@ -16,9 +16,11 @@ import org.kde.kirigami as Kirigami
 
 InputPanelWindow {
     id: root
-    height: Screen.height
-    width: Screen.width
-    color: 'transparent'
+    // Phase 5C experiment: hard-coded test size to see if KWin overrides our request.
+    // Was: height: Screen.height; width: Screen.width
+    height: 400
+    width: 600
+    color: 'red'
 
     onVisibleChanged: {
         if (!visible) {
@@ -51,12 +53,12 @@ InputPanelWindow {
         }
     }
 
-    // Unified overlay system for diacritics, emoji, text expansion, etc.
-    OverlayWindow {
-        id: overlayWindow
-        controller: thing.overlayController
-        onCandidateSelected: (index) => thing.overlayController.commitCandidate(index)
-    }
+    // Phase 5C experiment: OverlayWindow disabled to prevent ANY input-panel surface binding.
+    // OverlayWindow {
+    //     id: overlayWindow
+    //     controller: thing.overlayController
+    //     onCandidateSelected: (index) => thing.overlayController.commitCandidate(index)
+    // }
 
     interactiveRegion: Qt.rect(panelWrapper.x, panelWrapper.y, panelWrapper.width, panelWrapper.height)
 
