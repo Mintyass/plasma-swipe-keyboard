@@ -102,13 +102,14 @@ int main(int argc, char **argv)
 
     QObject::connect(&view, &QQmlApplicationEngine::objectCreated, &application, [](QObject *object) {
         auto window = qobject_cast<QWindow *>(object);
-        const bool initSuccessful = initInputPanelIntegration(window, InputPanelRole::Keyboard);
-
-        if (!initSuccessful) {
-            qCCritical(PlasmaKeyboard)
-                << "Cannot run plasma-keyboard standalone. You can enable it in Plasma's System Settings app, on the “Virtual Keyboard” page.";
-            exit(1);
-        }
+        // Phase 5C experiment (2026-05-03): bypass input-panel surface binding.
+        // Goal: see if window comes up as a normal xdg-shell toplevel AND text input still flows.
+        // const bool initSuccessful = initInputPanelIntegration(window, InputPanelRole::Keyboard);
+        // if (!initSuccessful) {
+        //     qCCritical(PlasmaKeyboard)
+        //         << "Cannot run plasma-keyboard standalone. You can enable it in Plasma's System Settings app, on the “Virtual Keyboard” page.";
+        //     exit(1);
+        // }
 
         window->requestActivate();
         window->setVisible(true);
